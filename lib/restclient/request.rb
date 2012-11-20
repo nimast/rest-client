@@ -56,7 +56,7 @@ module RestClient
       @ssl_ca_file = args[:ssl_ca_file] || nil
       @tf = nil # If you are a raw request, this is your tempfile
       @max_redirects = args[:max_redirects] || 10
-      @processed_headers = make_headers headers
+      @processed_headers = make_headers headers, args[:exclude_default_headers] || false
       @args = args
     end
 
@@ -86,11 +86,12 @@ module RestClient
       end
     end
 
-    def make_headers user_headers
+    def make_headers user_headers, exclude_default_headers = false
       unless @cookies.empty?
         user_headers[:cookie] = @cookies.map { |(key, val)| "#{key.to_s}=#{CGI::unescape(val.to_s)}" }.sort.join('; ')
       end
-      headers = stringify_headers(default_headers).merge(stringify_headers(user_headers))
+      headers = stringify_headers(user_headers)
+      headers.merge!(stringify_headers(default_headers)) unless exclude_default_headers
       headers.merge!(@payload.headers) if @payload
       headers
     end
